@@ -1,0 +1,84 @@
+# target and root file name
+TARGET = index
+
+# class files
+CLASS_FILE = your_class.cls
+
+# dependent document files
+TEX_FILES = \
+    body/abstract.tex \
+    body/introduction.tex \
+    body/conclusion.tex
+
+# dependent image files
+SVG_FILES = \
+    img/img1.svg \
+    img/img2.svg \
+    img/img3.svg
+
+# use bibtex or not (yes|no)
+BIBTEX_ENABLED = no
+
+# commands to compile document
+LATEX = latex
+BIBTEX = bibtex
+DVIPDF = dvipdfm
+DVIPS = dvips
+
+# generated files
+DVI_FILE = $(TARGET).dvi
+PDF_FILE = $(TARGET).pdf
+PS_FILE = $(TARGET).ps
+TEX_FILES += $(TARGET).tex
+EPS_FILES = $(SVG_FILES:%.svg=%.eps)
+AUX_FILES = $(TEX_FILES:%.tex=%.aux)
+GENERATED_FILE = \
+    $(EPS_FILES) \
+    $(DVI_FILE) \
+    $(PDF_FILE) \
+    $(AUX_FILES) \
+    $(TARGET).log \
+    $(TARGET).toc \
+    $(TARGET).bbl \
+    $(TARGET).blg \
+    texput.log
+
+.DEFAULT_GOAL = pdf
+
+.PHONY : pdf
+pdf : $(PDF_FILE)
+$(PDF_FILE) : $(DVI_FILE) $(TEX_FILES) $(EPS_FILES) $(CLASS_FILE)
+	$(DVIPDF) $(TARGET)
+
+.PHONY : ps
+ps : $(PS_FILE)
+$(PS_FILE) : $(DVI_FILE) $(TEX_FILES) $(EPS_FILES) $(CLASS_FILE)
+	$(DVIPS) $(TARGET)
+
+.PHONY : dvi
+dvi : $(DVI_FILE)
+$(DVI_FILE) : $(TEX_FILES) $(EPS_FILES) $(CLASS_FILE)
+	$(LATEX) -halt-on-error $(TARGET)
+ifeq ($(BIBTEX_ENABLED),yes)
+	$(BIBTEX) $(TARGET)
+endif
+	$(LATEX) -halt-on-error $(TARGET)
+
+%.eps : %.svg
+	inkscape --export-area-drawing --without-gui --file="$<" --export-eps="$@"
+
+.PHONY : clean
+clean:
+	rm -f $(GENERATED_FILE)
+
+.PHONY : help
+help:
+	@echo "make dvi"
+	@echo "        Make DVI file from tex documents."
+	@echo "make pdf"
+	@echo "        Make PDF file from DVI file."
+	@echo "make ps"
+	@echo "        Make PS file from DVI file."
+	@echo "make clean"
+	@echo "        Remove all generated files."
+
