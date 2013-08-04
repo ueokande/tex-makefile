@@ -63,6 +63,7 @@ ifeq ($(BIBTEX_ENABLED),yes)
 	$(BIBTEX) $(TARGET)
 endif
 	$(LATEX) -halt-on-error $(TARGET)
+	$(LATEX) -halt-on-error $(TARGET)
 
 %.eps : %.svg
 	inkscape --export-area-drawing --without-gui --file="$<" --export-eps="$@"
