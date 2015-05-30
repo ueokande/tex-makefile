@@ -35,12 +35,7 @@ $ make pdf
 `images/******` を指定します。
 
 ``` tex
-\begin{lstlisting}
-\begin{figure}[h]
-  \centering
-  \includegraphics[width=160pt]{images/latex.pdf}
-\end{figure}
-\end{lstlisting}
+\includegraphics[width=160pt]{images/latex.pdf}
 ```
 
 
