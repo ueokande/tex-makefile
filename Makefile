@@ -1,102 +1,90 @@
-# Commands to compile
-LATEX  = platex
+# target and root file name
+TARGET = index
+
+# Directories
+TEXMF_DIR = texmf
+SOURCE_DIR = source
+BUILD_DIR = build
+
+# an directory containing images unser $SOURCE_DIR
+IMAGES_DIR = images
+
+# An environment variable for kpsewhich search path
+TEXMF_VARIABLE = TEXMFLOCAL
+
+# commands to compile document
+LATEX = platex --shell-escape -halt-on-error
 BIBTEX = pbibtex
 DVIPDF = dvipdfmx
-DVIPS  = dvips
+DVIPS = dvips
 
-# Used bibtex or not (yes|no)
-BIBTEX_ENABLED = no
+# source files
+TEX_FILES = $(wildcard $(SOURCE_DIR)/*.tex)
+BIB_FILES = $(wildcard $(SOURCE_DIR)/*.bib)
+SVG_FILES = $(wildcard $(SOURCE_DIR)/$(IMAGES_DIR)/*.svg)
+IMAGE_FILES = $(wildcard $(SOURCE_DIR)/$(IMAGES_DIR)/*.png) \
+              $(wildcard $(SOURCE_DIR)/$(IMAGES_DIR)/*.pdf) \
+              $(wildcard $(SOURCE_DIR)/$(IMAGES_DIR)/*.jpg) \
 
-# Root document name (i.e. the name of root.txt is 'root')
-ROOT = root
+# generated files
+LINKED_IMAGE_FILES = $(addprefix $(BUILD_DIR)/$(IMAGES_DIR)/,$(notdir $(IMAGE_FILES)))
+EPS_FILES = $(addprefix $(BUILD_DIR)/$(IMAGES_DIR)/,$(notdir $(SVG_FILES:%.svg=%.pdf)))
+LINKED_BIB_FILES = $(addprefix $(BUILD_DIR)/,$(notdir $(BIB_FILES)))
+LINKED_TEX_FILES = $(addprefix $(BUILD_DIR)/,$(notdir $(TEX_FILES)))
 
-# Your class name if you describe your own .cls file.
-# Specify empty if you use a standard class.
-CLASS_FILE = # your_cls.cls
-
-# Specify your .bib if you use bibtex, otherwise specify empty
-BIB_FILE = # your_bib.bib
-
-# Directory which contains .tex files included in the document if the document
-# consists of more than one .tex file.
-TEX_DIR = # body
-
-# Directory which contains .svg files included in the document if the document
-# contains image(s).
-SVG_DIR = # img
-
-
-
-
-TEX_FILES = \
-    $(wildcard $(TEX_DIR)/*.tex) \
-    $(ROOT).tex
-SVG_FILES = \
-    $(wildcard $(SVG_DIR)/*.svg)
-ROOT_TEX = $(ROOT).tex
-ROOT_DVI = $(ROOT).dvi
-ROOT_PDF = $(ROOT).pdf
-ROOT_PS  = $(ROOT).ps
-ROOT_AUX = $(ROOT).aux
-ifeq ($(BIBTEX_ENABLED),yes)
-ROOT_BBL = $(ROOT).bbl
-endif
-
-EPS_FILES = $(SVG_FILES:%.svg=%.eps)
-AUX_FILES = $(TEX_FILES:%.tex=%.aux)
-GENERATED_FILES = \
-	$(ROOT).log \
-	$(ROOT).toc \
-	$(ROOT).lof \
-	$(ROOT).lot \
-	$(ROOT).bbl \
-	$(ROOT).blg \
-	$(ROOT).idx \
-	$(ROOT).out \
-	texput.log
+# Full path of texmf dir
+FULL_TEXMF_DIR = $(shell realpath $(TEXMF_DIR))
 
 .DEFAULT_GOAL = pdf
 
+$(TEXMF_DIR)/ls-R : $(TEXMF_DIR)
+	mktexlsr $(TEXMF_DIR)
+
 .PHONY : pdf
-pdf : $(ROOT_PDF)
-$(ROOT_PDF) : $(ROOT_DVI)
-	$(DVIPDF) $(ROOT_DVI)
+pdf : $(BUILD_DIR)/$(TARGET).pdf
+$(BUILD_DIR)/$(TARGET).pdf : $(BUILD_DIR)/$(TARGET).dvi $(TEX_FILES) $(EPS_FILES)
+	cd $(BUILD_DIR) && \
+	$(DVIPDF) $(TARGET)
 
 .PHONY : ps
-ps : $(ROOT_PS)
-$(ROOT_PS) : $(ROOT_DVI)
-	$(DVIPS) $(ROOT_DVI)
+ps : $(BUILD_DIR)/$(TARGET).ps
+$(BUILD_DIR)/$(TARGET).ps : $(BUILD_DIR)/$(TARGET).dvi $(TEX_FILES) $(EPS_FILES)
+	cd $(BUILD_DIR) && \
+	$(DVIPS) $(TARGET)
 
-.PHONY : dvi
-dvi : $(ROOT_DVI) $(CLASS_FILE)
-$(ROOT_DVI) : $(ROOT_BBL) $(TEX_FILES) $(AUX_FILES)
-	$(LATEX) -halt-on-error $(ROOT_TEX)
-	$(LATEX) -halt-on-error $(ROOT_TEX)
+$(BUILD_DIR)/$(TARGET).dvi : $(BUILD_DIR)/$(TARGET).bbl $(BUILD_DIR)/$(TARGET).aux
+	cd $(BUILD_DIR) && \
+	$(TEXMF_VARIABLE)=$(FULL_TEXMF_DIR) $(LATEX) $(TARGET) >/dev/null && \
+	$(TEXMF_VARIABLE)=$(FULL_TEXMF_DIR) $(LATEX) $(TARGET)
 
-.PHONY : aux
-aux : $(AUX_FILES)
-$(AUX_FILES) : $(TEX_FILES) $(EPS_FILES)
-	$(LATEX) -halt-on-error $(ROOT_TEX)
+$(BUILD_DIR)/$(TARGET).bbl : $(BUILD_DIR)/$(TARGET).aux $(LINKED_BIB_FILES)
+ifneq ($(strip $(BIB_FILES)),)
+	cd $(BUILD_DIR) && \
+	$(BIBTEX) $(TARGET)
+endif
 
-.PHONY : bbl
-bbl : $(ROOT_BBL)
-$(ROOT_BBL) : $(AUX_FILES) $(BIB_FILE)
-	$(BIBTEX) $(ROOT_AUX)
+$(BUILD_DIR)/$(TARGET).aux : $(BUILD_DIR)/ $(LINKED_TEX_FILES) $(LINKED_IMAGE_FILES) $(TEX_FILES) $(EPS_FILES) $(TEXMF_DIR)/ls-R
+	cd $(BUILD_DIR) && \
+	$(TEXMF_VARIABLE)=$(FULL_TEXMF_DIR) $(LATEX) $(TARGET)
 
-.PHONY : eps
-eps : $(EPS_FILES)
-%.eps : %.svg
-	inkscape --export-area-drawing --without-gui --file="$<" --export-eps="$@"
+$(BUILD_DIR)/ :
+	mkdir -p $(BUILD_DIR)
+
+$(BUILD_DIR)/$(IMAGES_DIR)/ :
+	mkdir -p $(BUILD_DIR)/$(IMAGES_DIR)
+
+$(BUILD_DIR)/% : $(SOURCE_DIR)/% $(BUILD_DIR)/
+	ln -fs $(shell realpath "$<") "$@"
+
+$(BUILD_DIR)/$(IMAGES_DIR)/% : $(SOURCE_DIR)/$(IMAGES_DIR)/% $(BUILD_DIR)/$(IMAGES_DIR)/
+	ln -fs $(shell realpath "$<") "$@"
+
+$(BUILD_DIR)/$(IMAGES_DIR)/%.pdf : $(SOURCE_DIR)/$(IMAGES_DIR)/%.svg $(BUILD_DIR)/$(IMAGES_DIR)/
+	inkscape -z -D --file="$<" --export-pdf="$@"
 
 .PHONY : clean
 clean:
-	$(RM) $(ROOT_PDF)
-	$(RM) $(ROOT_DVI)
-	$(RM) $(ROOT_PS)
-	$(RM) $(ROOT_BBL)
-	$(RM) $(EPS_FILES)
-	$(RM) $(AUX_FILES)
-	$(RM) $(GENERATED_FILES)
+	rm -rf $(BUILD_DIR)
 
 .PHONY : help
 help:
@@ -107,5 +95,4 @@ help:
 	@echo "make ps"
 	@echo "        Make PS file from DVI file."
 	@echo "make clean"
-	@echo "        Remove all generated files."
-
+	@echo "        Clean build directory."
