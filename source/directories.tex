@@ -1,0 +1,36 @@
+\section{ディレクトリ構造}
+
+\subsection{/source}
+
+\texttt{/source} に、\TeX のソースファイル(.tex) を配置します。
+\texttt{\textbackslash include}タグで呼ばれるような、
+部分ドキュメントもこのディレクトリに配置します。
+
+\subsection{/source/images}
+
+画像ファイルなどをここに配置します。
+画像ファイルを文章に挿入するときは、\texttt{images/******} を指定します。
+
+\begin{lstlisting}
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=160pt]{images/latex.pdf}
+\end{figure}
+\end{lstlisting}
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=160pt]{images/latex.pdf}
+\end{figure}
+
+.svgファイルも \texttt{/source/images} に配置することで、
+自動でpdf形式の画像に変換してファイルを貼り付けることが可能です(要Inkscape)。
+
+\subsection{/texmf}
+
+このプロジェクトのみに依存している、ローカルな \texttt{texmf} ディレクトリです。
+.sty, .cls, .mapファイルを適宜配置することで、プロジェクトのビルド時にロードされます。
+
+\subsection{/build}
+
+ビルドで生成されたファイルがここに格納されます。
