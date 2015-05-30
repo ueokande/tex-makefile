@@ -1,7 +1,32 @@
 \documentclass[]{article}
 
+\usepackage[dvipdfmx]{graphicx}
+\usepackage{ascmac}
+\usepackage{listings}
+\usepackage{color}
+
+\lstset{
+  basicstyle=\small\ttfamily,
+  backgroundcolor=\color[rgb]{.9,.9,.9},
+  breakatwhitespace=false,
+  keepspaces=true,
+  showspaces=false,
+  showstringspaces=false,
+  showtabs=false,
+  tabsize=2,
+}
+
+
 \begin{document}
 
-Welcome to \LaTeX.
+\title{{\TeX} Mekefile.}
+
+\maketitle
+
+このMakefileは、\LaTeX をコンパイルします。部分ドキュメントや.svgファイルの
+自動変換などに対応しています。
+
+\include{usage}
+\include{directories}
 
 \end{document}
