@@ -24,7 +24,9 @@ BIB_FILES = $(wildcard $(SOURCE_DIR)/*.bib)
 SVG_FILES = $(wildcard $(SOURCE_DIR)/$(IMAGES_DIR)/*.svg)
 IMAGE_FILES = $(wildcard $(SOURCE_DIR)/$(IMAGES_DIR)/*.png) \
               $(wildcard $(SOURCE_DIR)/$(IMAGES_DIR)/*.pdf) \
+              $(wildcard $(SOURCE_DIR)/$(IMAGES_DIR)/*.eps) \
               $(wildcard $(SOURCE_DIR)/$(IMAGES_DIR)/*.jpg) \
+              $(wildcard $(SOURCE_DIR)/$(IMAGES_DIR)/*.jpeg)
 
 # generated files
 LINKED_IMAGE_FILES = $(addprefix $(BUILD_DIR)/$(IMAGES_DIR)/,$(notdir $(IMAGE_FILES)))
